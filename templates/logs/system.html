@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik MSC - Logs Hệ Thống</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">MikroTik MSC</h4>
+                        <p class="text-muted">Management System Center</p>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/dashboard">
+                                <i class="fa-solid fa-gauge-high me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/clients">
+                                <i class="fa-solid fa-laptop me-2"></i>
+                                Clients
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/interfaces">
+                                <i class="fa-solid fa-network-wired me-2"></i>
+                                Interfaces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/ip">
+                                <i class="fa-solid fa-sitemap me-2"></i>
+                                IP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/firewall">
+                                <i class="fa-solid fa-shield-halved me-2"></i>
+                                Firewall
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/logs/system">
+                                <i class="fa-solid fa-clipboard-list me-2"></i>
+                                Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backup/manager">
+                                <i class="fa-solid fa-floppy-disk me-2"></i>
+                                Backup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings/general">
+                                <i class="fa-solid fa-gear me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Logs Hệ Thống</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" id="refreshLogsBtn" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-sync me-1"></i> Làm Mới
+                            </button>
+                            <button type="button" id="exportLogsBtn" class="btn btn-sm btn-info">
+                                <i class="fa-solid fa-file-export me-1"></i> Xuất
+                            </button>
+                            <button type="button" id="clearLogsBtn" class="btn btn-sm btn-warning">
+                                <i class="fa-solid fa-eraser me-1"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Navigation -->
+                <ul class="nav nav-tabs mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/logs/system">
+                            <i class="fa-solid fa-server me-1"></i> System
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logs/firewall">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Firewall
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logs/mikrotik">
+                            <i class="fa-solid fa-router me-1"></i> MikroTik
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logs/application">
+                            <i class="fa-solid fa-code me-1"></i> Application
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Logs Filter -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Bộ Lọc</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="logsFilterForm" class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="logLevel" class="form-label">Mức Độ</label>
+                                        <select class="form-select" id="logLevel" name="logLevel">
+                                            <option value="">Tất cả</option>
+                                            <option value="info">Info</option>
+                                            <option value="warning">Warning</option>
+                                            <option value="error">Error</option>
+                                            <option value="critical">Critical</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="logTopic" class="form-label">Chủ Đề</label>
+                                        <select class="form-select" id="logTopic" name="logTopic">
+                                            <option value="">Tất cả</option>
+                                            <option value="system">System</option>
+                                            <option value="auth">Authentication</option>
+                                            <option value="network">Network</option>
+                                            <option value="services">Services</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fromDate" class="form-label">Từ Ngày</label>
+                                        <input type="date" class="form-control" id="fromDate" name="fromDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="toDate" class="form-label">Đến Ngày</label>
+                                        <input type="date" class="form-control" id="toDate" name="toDate">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="searchText" class="form-label">Tìm Kiếm</label>
+                                        <input type="text" class="form-control" id="searchText" name="searchText" placeholder="Nhập từ khóa...">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="logLimit" class="form-label">Số Lượng</label>
+                                        <select class="form-select" id="logLimit" name="logLimit">
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                            <option value="200">200</option>
+                                            <option value="500">500</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fa-solid fa-filter me-1"></i> Lọc
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Table -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Logs Hệ Thống</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="systemLogsTable">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Thời Gian</th>
+                                                <th scope="col">Mức Độ</th>
+                                                <th scope="col">Chủ Đề</th>
+                                                <th scope="col">Thiết Bị</th>
+                                                <th scope="col">Nội Dung</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>10/03/2025 08:30:15</td>
+                                                <td><span class="badge bg-success">Info</span></td>
+                                                <td>System</td>
+                                                <td>Server</td>
+                                                <td>Hệ thống khởi động thành công</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:25:10</td>
+                                                <td><span class="badge bg-warning">Warning</span></td>
+                                                <td>Auth</td>
+                                                <td>Router Chính</td>
+                                                <td>Đăng nhập thất bại từ IP 192.168.1.100</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:20:05</td>
+                                                <td><span class="badge bg-danger">Error</span></td>
+                                                <td>Network</td>
+                                                <td>Router Chính</td>
+                                                <td>Không thể kết nối đến thiết bị ngoại vi trên cổng ether2</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:15:30</td>
+                                                <td><span class="badge bg-info">Info</span></td>
+                                                <td>System</td>
+                                                <td>Router Phòng Kỹ Thuật</td>
+                                                <td>Cập nhật firmware thành công lên phiên bản 7.11.2</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:10:22</td>
+                                                <td><span class="badge bg-success">Info</span></td>
+                                                <td>Auth</td>
+                                                <td>Router Chính</td>
+                                                <td>Đăng nhập thành công từ IP 192.168.1.10 (admin)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:05:18</td>
+                                                <td><span class="badge bg-warning">Warning</span></td>
+                                                <td>Services</td>
+                                                <td>Router Chính</td>
+                                                <td>Dịch vụ DHCP tạm dừng</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10/03/2025 08:00:05</td>
+                                                <td><span class="badge bg-success">Info</span></td>
+                                                <td>Services</td>
+                                                <td>Router Chính</td>
+                                                <td>Dịch vụ DHCP hoạt động trở lại</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item disabled">
+                                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Trước</a>
+                                            </li>
+                                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="#">Sau</a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Clear Logs Modal -->
+    <div class="modal fade" id="clearLogsModal" tabindex="-1" aria-labelledby="clearLogsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clearLogsModalLabel">Xác Nhận Xóa Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa tất cả logs hệ thống không?</p>
+                    <p class="text-danger"><strong>Lưu ý:</strong> Hành động này không thể hoàn tác.</p>
+                    <form id="clearLogsForm">
+                        <div class="mb-3">
+                            <label for="clearLogsDays" class="form-label">Xóa logs cũ hơn</label>
+                            <select class="form-select" id="clearLogsDays" name="clearLogsDays">
+                                <option value="0">Tất cả logs</option>
+                                <option value="7" selected>7 ngày</option>
+                                <option value="30">30 ngày</option>
+                                <option value="90">90 ngày</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="clearLogsType" class="form-label">Loại logs</label>
+                            <select class="form-select" id="clearLogsType" name="clearLogsType">
+                                <option value="all" selected>Tất cả</option>
+                                <option value="info">Chỉ Info</option>
+                                <option value="warning">Info và Warning</option>
+                                <option value="error">Giữ lại Error và Critical</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="confirmClearLogsBtn">Xác Nhận Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Logs Modal -->
+    <div class="modal fade" id="exportLogsModal" tabindex="-1" aria-labelledby="exportLogsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportLogsModalLabel">Xuất Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportLogsForm">
+                        <div class="mb-3">
+                            <label for="exportFormat" class="form-label">Định Dạng</label>
+                            <select class="form-select" id="exportFormat" name="exportFormat">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                                <option value="txt">Text</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportDays" class="form-label">Khoảng Thời Gian</label>
+                            <select class="form-select" id="exportDays" name="exportDays">
+                                <option value="0">Tất cả logs</option>
+                                <option value="1">1 ngày qua</option>
+                                <option value="7" selected>7 ngày qua</option>
+                                <option value="30">30 ngày qua</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="exportFiltered" name="exportFiltered" checked>
+                            <label class="form-check-label" for="exportFiltered">Chỉ xuất logs đã lọc</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="confirmExportLogsBtn">Xuất</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="/static/js/logs/system.js"></script>
+</body>
+</html>

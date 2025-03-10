@@ -1,0 +1,48 @@
+2025-03-10 08:41:34,806 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:41:34,811 - werkzeug - INFO -  * Debugger PIN: 138-012-077
+2025-03-10 08:42:15,255 - werkzeug - INFO -  * Detected change in '/home/runner/workspace/app.py', reloading
+2025-03-10 08:42:15,675 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:42:15,676 - werkzeug - INFO -  * Debugger PIN: 402-187-370
+2025-03-10 08:42:26,685 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.128.96:5000
+2025-03-10 08:42:26,685 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 08:42:26,686 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 08:42:27,067 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:42:27,069 - werkzeug - INFO -  * Debugger PIN: 539-916-167
+2025-03-10 08:42:27,737 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:27] "GET / HTTP/1.1" 200 -
+2025-03-10 08:42:28,030 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:28] "GET / HTTP/1.1" 200 -
+2025-03-10 08:42:28,036 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:28] "GET / HTTP/1.1" 200 -
+2025-03-10 08:42:43,549 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:43] "GET / HTTP/1.1" 200 -
+2025-03-10 08:42:44,516 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:44] "GET / HTTP/1.1" 200 -
+2025-03-10 08:42:44,640 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:42:44] "GET / HTTP/1.1" 200 -
+2025-03-10 08:48:59,094 - werkzeug - INFO -  * Detected change in '/home/runner/workspace/app.py', reloading
+2025-03-10 08:48:59,143 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 08:48:59,714 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:48:59,716 - werkzeug - INFO -  * Debugger PIN: 444-270-214
+2025-03-10 08:53:26,064 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.128.96:5000
+2025-03-10 08:53:26,064 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 08:53:26,066 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 08:53:26,506 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:53:26,508 - werkzeug - INFO -  * Debugger PIN: 126-117-257
+2025-03-10 08:54:28,680 - werkzeug - INFO -  * Detected change in '/home/runner/workspace/utils/notifications.py', reloading
+2025-03-10 08:54:28,725 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 08:54:29,532 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:54:29,540 - werkzeug - INFO -  * Debugger PIN: 102-999-643
+2025-03-10 08:54:43,449 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.128.96:5000
+2025-03-10 08:54:43,449 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 08:54:43,450 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 08:54:44,053 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 08:54:44,054 - werkzeug - INFO -  * Debugger PIN: 698-516-659
+2025-03-10 08:54:44,290 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:54:44] "[32mGET / HTTP/1.1[0m" 302 -
+2025-03-10 08:54:44,320 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:54:44] "GET /login HTTP/1.1" 200 -
+2025-03-10 08:54:44,342 - werkzeug - INFO - 172.31.128.96 - - [10/Mar/2025 08:54:44] "GET /static/css/styles.css HTTP/1.1" 200 -
+2025-03-10 08:56:55,206 - werkzeug - INFO -  * Detected change in '/home/runner/workspace/app.py', reloading
+2025-03-10 08:56:55,251 - werkzeug - INFO -  * Restarting with stat

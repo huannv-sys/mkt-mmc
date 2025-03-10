@@ -1,0 +1,5 @@
+requests
+pysnmp
+sqlalchemy
+PyJWT
+pyyaml

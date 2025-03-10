@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Test SMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Test Gửi SMS</h4>
+                </div>
+                <div class="alert alert-warning m-3">
+                    <p><strong>Lưu ý quan trọng:</strong></p>
+                    <ol>
+                        <li>Hệ thống đang sử dụng Twilio để gửi SMS. <span class="text-danger">Số điện thoại nhận không được trùng với số điện thoại Twilio đã cấu hình.</span></li>
+                        <li>Với tài khoản Twilio thử nghiệm, số điện thoại nhận phải được xác nhận trước trong Twilio Console.</li>
+                        <li>Số điện thoại phải ở định dạng E.164 (bao gồm mã quốc gia), ví dụ: +84912345678.</li>
+                    </ol>
+                </div>
+                <div class="card-body">
+                    <form id="smsTestForm">
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" 
+                                   placeholder="+84123456789" required>
+                            <small class="text-muted">Định dạng E.164 (VD: +84123456789)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Nội dung tin nhắn</label>
+                            <textarea class="form-control" id="message" name="message" rows="3" 
+                                    placeholder="Nhập nội dung tin nhắn..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Gửi tin nhắn test</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Toast thông báo -->
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                <div id="smsToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                        </div>
+                        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('smsTestForm');
+    const toast = new bootstrap.Toast(document.getElementById('smsToast'));
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const phoneNumber = document.getElementById('phoneNumber').value;
+        const message = document.getElementById('message').value;
+        
+        try {
+            const response = await fetch('/api/notifications/test-sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    message: message
+                })
+            });
+            
+            const data = await response.json();
+            const toastBody = document.querySelector('.toast-body');
+            
+            if (data.success) {
+                toastBody.textContent = data.message;
+                toastBody.parentElement.classList.remove('text-bg-danger');
+                toastBody.parentElement.classList.add('text-bg-success');
+            } else {
+                toastBody.textContent = data.error;
+                toastBody.parentElement.classList.remove('text-bg-success');
+                toastBody.parentElement.classList.add('text-bg-danger');
+            }
+            
+            toast.show();
+            
+            if (data.success) {
+                form.reset();
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            const toastBody = document.querySelector('.toast-body');
+            toastBody.textContent = 'Đã xảy ra lỗi khi gửi tin nhắn';
+            toastBody.parentElement.classList.remove('text-bg-success');
+            toastBody.parentElement.classList.add('text-bg-danger');
+            toast.show();
+        }
+    });
+});
+</script>
+{% endblock %}

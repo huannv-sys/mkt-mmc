@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block title %}IP Monitoring - MikroTik MSC{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Tiêu đề trang -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">IP Monitoring</h1>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIpModal">
+                <i class="fas fa-plus me-2"></i> Thêm IP
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt me-2"></i> Làm mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Hàng đầu tiên: Thống kê tổng quan -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Tổng số IP</h6>
+                    <h2 class="card-title mb-0" id="totalIps">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">IP đang hoạt động</h6>
+                    <h2 class="card-title mb-0 text-success" id="activeIps">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">IP không hoạt động</h6>
+                    <h2 class="card-title mb-0 text-danger" id="inactiveIps">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">IP đang theo dõi</h6>
+                    <h2 class="card-title mb-0 text-info" id="monitoredIps">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hàng thứ hai: Biểu đồ -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Traffic theo IP</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Phân bố IP</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="resourceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách IP -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Danh sách IP</h5>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm IP...">
+                    <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Interface</th>
+                            <th>MAC Address</th>
+                            <th>Status</th>
+                            <th>Traffic In</th>
+                            <th>Traffic Out</th>
+                            <th>Last Seen</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ipTableBody">
+                        <!-- Dữ liệu sẽ được thêm vào đây bằng JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm IP -->
+<div class="modal fade" id="addIpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm IP mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addIpForm">
+                    <div class="mb-3">
+                        <label for="ipAddress" class="form-label">IP Address</label>
+                        <input type="text" class="form-control" id="ipAddress" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interface" class="form-label">Interface</label>
+                        <select class="form-select" id="interface" required>
+                            <!-- Options sẽ được thêm bằng JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="macAddress" class="form-label">MAC Address</label>
+                        <input type="text" class="form-control" id="macAddress">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="enableMonitoring">
+                            <label class="form-check-label" for="enableMonitoring">
+                                Bật theo dõi
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveIpBtn">
+                    <i class="fas fa-save me-2"></i> Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiết IP -->
+<div class="modal fade" id="ipDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết IP</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#overview">
+                            <i class="fas fa-info-circle me-2"></i> Tổng quan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#traffic">
+                            <i class="fas fa-chart-line me-2"></i> Traffic
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#history">
+                            <i class="fas fa-history me-2"></i> Lịch sử
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Tab content -->
+                <div class="tab-content mt-3">
+                    <!-- Tab tổng quan -->
+                    <div class="tab-pane fade show active" id="overview">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table">
+                                    <tr>
+                                        <th>IP Address:</th>
+                                        <td id="detailIpAddress"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Interface:</th>
+                                        <td id="detailInterface"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>MAC Address:</th>
+                                        <td id="detailMacAddress"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td id="detailStatus"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table">
+                                    <tr>
+                                        <th>Traffic In:</th>
+                                        <td id="detailTrafficIn"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Traffic Out:</th>
+                                        <td id="detailTrafficOut"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Last Seen:</th>
+                                        <td id="detailLastSeen"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Monitoring:</th>
+                                        <td id="detailMonitoring"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab traffic -->
+                    <div class="tab-pane fade" id="traffic">
+                        <div style="height: 300px;">
+                            <canvas id="detailTrafficChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tab lịch sử -->
+                    <div class="tab-pane fade" id="history">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Thời gian</th>
+                                        <th>Sự kiện</th>
+                                        <th>Chi tiết</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+let currentIpAddress = null;
+
+// Khởi tạo trang
+document.addEventListener('DOMContentLoaded', function() {
+    // Load dữ liệu ban đầu
+    loadIpData();
+    
+    // Thiết lập các sự kiện
+    setupEventListeners();
+    
+    // Cập nhật dữ liệu mỗi 30 giây
+    setInterval(loadIpData, 30000);
+});
+
+// Hàm load dữ liệu IP
+function loadIpData() {
+    fetch('/api/ip/list')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDashboard(data.data);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Hàm cập nhật dashboard
+function updateDashboard(data) {
+    // Cập nhật thống kê
+    document.getElementById('totalIps').textContent = data.stats.total;
+    document.getElementById('activeIps').textContent = data.stats.active;
+    document.getElementById('inactiveIps').textContent = data.stats.inactive;
+    document.getElementById('monitoredIps').textContent = data.stats.monitored;
+    
+    // Cập nhật bảng
+    updateIpTable(data.ips);
+    
+    // Cập nhật biểu đồ
+    updateCharts(data.charts);
+}
+
+// Hàm cập nhật bảng IP
+function updateIpTable(ips) {
+    const tbody = document.getElementById('ipTableBody');
+    tbody.innerHTML = '';
+    
+    ips.forEach(ip => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${ip.address}</td>
+            <td>${ip.interface}</td>
+            <td>${ip.mac_address || '-'}</td>
+            <td>
+                <span class="badge bg-${ip.status === 'active' ? 'success' : 'danger'}">
+                    ${ip.status}
+                </span>
+            </td>
+            <td>${formatTraffic(ip.traffic_in)}</td>
+            <td>${formatTraffic(ip.traffic_out)}</td>
+            <td>${formatDate(ip.last_seen)}</td>
+            <td>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-info" onclick="showIpDetails('${ip.address}')">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="editIp('${ip.address}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteIp('${ip.address}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Hàm thiết lập các event listener
+function setupEventListeners() {
+    // Nút làm mới
+    document.getElementById('refreshBtn').addEventListener('click', loadIpData);
+    
+    // Form tìm kiếm
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        const searchTerm = document.getElementById('searchInput').value;
+        searchIps(searchTerm);
+    });
+    
+    // Form thêm IP
+    document.getElementById('saveIpBtn').addEventListener('click', saveIp);
+}
+
+// Hàm hiển thị chi tiết IP
+function showIpDetails(ipAddress) {
+    currentIpAddress = ipAddress;
+    
+    fetch(`/api/ip/${ipAddress}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateIpDetails(data.data);
+                new bootstrap.Modal(document.getElementById('ipDetailsModal')).show();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Hàm cập nhật thông tin chi tiết IP
+function updateIpDetails(data) {
+    // Cập nhật thông tin cơ bản
+    document.getElementById('detailIpAddress').textContent = data.address;
+    document.getElementById('detailInterface').textContent = data.interface;
+    document.getElementById('detailMacAddress').textContent = data.mac_address || '-';
+    document.getElementById('detailStatus').innerHTML = `
+        <span class="badge bg-${data.status === 'active' ? 'success' : 'danger'}">
+            ${data.status}
+        </span>
+    `;
+    document.getElementById('detailTrafficIn').textContent = formatTraffic(data.traffic_in);
+    document.getElementById('detailTrafficOut').textContent = formatTraffic(data.traffic_out);
+    document.getElementById('detailLastSeen').textContent = formatDate(data.last_seen);
+    document.getElementById('detailMonitoring').innerHTML = `
+        <span class="badge bg-${data.monitoring ? 'info' : 'secondary'}">
+            ${data.monitoring ? 'Enabled' : 'Disabled'}
+        </span>
+    `;
+    
+    // Cập nhật lịch sử
+    updateHistory(data.history);
+}
+
+// Hàm cập nhật lịch sử
+function updateHistory(history) {
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = '';
+    
+    history.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${formatDate(item.timestamp)}</td>
+            <td>${item.event}</td>
+            <td>${item.details}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Hàm định dạng traffic
+function formatTraffic(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    else if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    else return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+// Hàm định dạng ngày
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString();
+}
+
+// Hàm xóa IP
+function deleteIp(ipAddress) {
+    if (confirm('Bạn có chắc chắn muốn xóa IP này?')) {
+        fetch(`/api/ip/${ipAddress}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadIpData();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+// Hàm lưu IP
+function saveIp() {
+    const formData = {
+        address: document.getElementById('ipAddress').value,
+        interface: document.getElementById('interface').value,
+        mac_address: document.getElementById('macAddress').value,
+        monitoring: document.getElementById('enableMonitoring').checked
+    };
+    
+    fetch('/api/ip/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadIpData();
+            bootstrap.Modal.getInstance(document.getElementById('addIpModal')).hide();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Hàm tìm kiếm IP
+function searchIps(term) {
+    fetch(`/api/ip/search?q=${encodeURIComponent(term)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateIpTable(data.data);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

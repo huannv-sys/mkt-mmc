@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik Network Master Control - IP Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap5.min.css">
+    <style>
+        .ip-card {
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+        .ip-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .network-map {
+            height: 400px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            position: relative;
+        }
+        .network-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .network-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .network-node.router {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .network-node.network {
+            background-color: #6c757d;
+            color: white;
+        }
+        .network-node.device {
+            background-color: #198754;
+            color: white;
+        }
+        .network-line {
+            position: absolute;
+            height: 2px;
+            background-color: #dee2e6;
+            transform-origin: left center;
+            z-index: 5;
+        }
+        .network-label {
+            position: absolute;
+            font-size: 0.75rem;
+            background-color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            z-index: 15;
+        }
+        .subnet-tree {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .subnet-tree ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        .subnet-tree > ul {
+            padding-left: 0;
+        }
+        .subnet-tree li {
+            margin: 5px 0;
+            position: relative;
+        }
+        .subnet-tree .subnet-node {
+            display: flex;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .subnet-tree .subnet-node:hover {
+            background-color: #e9ecef;
+        }
+        .subnet-tree .subnet-node.active {
+            background-color: #cfe2ff;
+            border-left: 3px solid #0d6efd;
+        }
+        .subnet-tree .subnet-toggle {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .subnet-tree .subnet-content {
+            display: none;
+        }
+        .subnet-tree .subnet-content.show {
+            display: block;
+        }
+        .ip-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+        .ip-status-active {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .ip-status-inactive {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .ip-status-dynamic {
+            background-color: #cff4fc;
+            color: #055160;
+        }
+        .arp-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s ease;
+        }
+        .arp-entry:hover {
+            background-color: #f8f9fa;
+        }
+        .arp-entry:last-child {
+            border-bottom: none;
+        }
+        .arp-entry .arp-mac {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        .dns-cache-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .dns-cache-entry:hover {
+            background-color: #f8f9fa;
+        }
+        .dns-cache-entry:last-child {
+            border-bottom: none;
+        }
+        .dns-cache-entry .dns-ttl {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        .traffic-stats {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        .traffic-up {
+            color: #dc3545;
+            margin-right: 10px;
+        }
+        .traffic-down {
+            color: #198754;
+        }
+        .network-visualization {
+            height: 600px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">
+            <i class="bi bi-router-fill"></i> MikroTik MSC
+        </a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100 d-flex align-items-center">
+            <div class="dropdown ms-auto me-2">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-hdd-network"></i> Chọn thiết bị
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="deviceList" aria-labelledby="deviceDropdown">
+                    <!-- Device list will be loaded dynamically -->
+                </ul>
+            </div>
+            <div class="me-2">
+                <button class="btn btn-light" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Giám sát</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/dashboard">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/interfaces">
+                                <i class="bi bi-ethernet"></i> Interfaces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/clients">
+                                <i class="bi bi-pc-display"></i> Clients
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/wireless">
+                                <i class="bi bi-wifi"></i> Wireless
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/monitoring/ip">
+                                <i class="bi bi-globe"></i> IP
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Quản lý</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/firewall">
+                                <i class="bi bi-shield-check"></i> Firewall
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/dhcp">
+                                <i class="bi bi-diagram-3"></i> DHCP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/vpn">
+                                <i class="bi bi-unlock"></i> VPN
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/capsman">
+                                <i class="bi bi-broadcast-pin"></i> CAPsMAN
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Hệ thống</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/backup">
+                                <i class="bi bi-cloud-arrow-up"></i> Backup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/settings">
+                                <i class="bi bi-gear"></i> Cài đặt
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">IP Management & Monitoring</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="export-ip-btn">
+                                <i class="bi bi-download"></i> Export
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="add-ip-btn" data-bs-toggle="modal" data-bs-target="#addIPModal">
+                                <i class="bi bi-plus-circle"></i> Add IP
+                            </button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="viewDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-graph-up"></i> View
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="viewDropdown">
+                                <li><a class="dropdown-item" href="#" id="view-standard">Standard View</a></li>
+                                <li><a class="dropdown-item" href="#" id="view-network-map">Network Map</a></li>
+                                <li><a class="dropdown-item" href="#" id="view-subnet-tree">Subnet Tree</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IP Overview Cards -->
+                <div class="row">
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total IP Addresses</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-ip-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-globe fs-2 text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Address Lists</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="address-lists-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-list-check fs-2 text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">ARP Entries</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="arp-entries-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-hdd-network fs-2 text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">DNS Cache Entries</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="dns-cache-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-translate fs-2 text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-tabs mb-4" id="ipTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses-tab-pane" type="button" role="tab" aria-controls="addresses-tab-pane" aria-selected="true">IP Addresses</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="arp-tab" data-bs-toggle="tab" data-bs-target="#arp-tab-pane" type="button" role="tab" aria-controls="arp-tab-pane" aria-selected="false">ARP Table</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dns-tab" data-bs-toggle="tab" data-bs-target="#dns-tab-pane" type="button" role="tab" aria-controls="dns-tab-pane" aria-selected="false">DNS Cache</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="address-lists-tab" data-bs-toggle="tab" data-bs-target="#address-lists-tab-pane" type="button" role="tab" aria-controls="address-lists-tab-pane" aria-selected="false">Address Lists</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="visualization-tab" data-bs-toggle="tab" data-bs-target="#visualization-tab-pane" type="button" role="tab" aria-controls="visualization-tab-pane" aria-selected="false">Network Visualization</button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="ipTabContent">
+                    <!-- IP Addresses Tab -->
+                    <div class="tab-pane fade show active" id="addresses-tab-pane" role="tabpanel" aria-labelledby="addresses-tab" tabindex="0">
+                        <!-- Standard View (Default) -->
+                        <div id="ip-standard-view">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-primary">IP Addresses</h6>
+                                    <button class="btn btn-primary btn-sm" id="add-ip-address-btn" data-bs-toggle="modal" data-bs-target="#addIPModal">
+                                        <i class="bi bi-plus-circle"></i> Add IP Address
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover" id="ip-addresses-table" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Address</th>
+                                                    <th>Network</th>
+                                                    <th>Interface</th>
+                                                    <th>Type</th>
+                                                    <th>Status</th>
+                                                    <th>Comment</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- IP addresses will be loaded dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Network Map View (Hidden by default) -->
+                        <div id="ip-network-map-view" class="d-none">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Network Map</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="network-map" id="ip-network-map">
+                                        <!-- Network map will be rendered dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subnet Tree View (Hidden by default) -->
+                        <div id="ip-subnet-tree-view" class="d-none">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Subnet Hierarchy</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="subnet-tree" id="subnet-tree">
+                                        <!-- Subnet tree will be populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ARP Table Tab -->
+                    <div class="tab-pane fade" id="arp-tab-pane" role="tabpanel" aria-labelledby="arp-tab" tabindex="0">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">ARP Table</h6>
+                                <div>
+                                    <button class="btn btn-primary btn-sm" id="refresh-arp-btn">
+                                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" id="arp-table" width="100%" cellspacing="0">
+                                        <thead>
+                                            <tr>
+                                                <th>IP Address</th>
+                                                <th>MAC Address</th>
+                                                <th>Interface</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- ARP entries will be loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DNS Cache Tab -->
+                    <div class="tab-pane fade" id="dns-tab-pane" role="tabpanel" aria-labelledby="dns-tab" tabindex="0">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">DNS Cache</h6>
+                                <div>
+                                    <button class="btn btn-danger btn-sm me-2" id="flush-dns-btn">
+                                        <i class="bi bi-trash"></i> Flush Cache
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" id="refresh-dns-btn">
+                                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" id="dns-cache-table" width="100%" cellspacing="0">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Address</th>
+                                                <th>TTL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- DNS cache entries will be loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Lists Tab -->
+                    <div class="tab-pane fade" id="address-lists-tab-pane" role="tabpanel" aria-labelledby="address-lists-tab" tabindex="0">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">Address Lists</h6>
+                                        <button class="btn btn-primary btn-sm" id="add-address-list-btn" data-bs-toggle="modal" data-bs-target="#addAddressListModal">
+                                            <i class="bi bi-plus-circle"></i> Add List
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="address-lists">
+                                            <!-- Address lists will be loaded dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary" id="selected-address-list-name">Select an Address List</h6>
+                                        <button class="btn btn-primary btn-sm" id="add-to-address-list-btn" data-bs-toggle="modal" data-bs-target="#addToAddressListModal" disabled>
+                                            <i class="bi bi-plus-circle"></i> Add Address
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="address-list-entries">
+                                            <div class="text-center text-muted py-5">
+                                                <i class="bi bi-arrow-left-circle fs-2"></i>
+                                                <p class="mt-2">Select an address list to view entries</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Visualization Tab -->
+                    <div class="tab-pane fade" id="visualization-tab-pane" role="tabpanel" aria-labelledby="visualization-tab" tabindex="0">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Network Visualization</h6>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-secondary btn-sm active" id="view-subnets-btn">Subnets</button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="view-devices-btn">Devices</button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="view-traffic-btn">Traffic</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="network-visualization" id="network-visualization">
+                                    <!-- Network visualization will be rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add IP Address Modal -->
+                <div class="modal fade" id="addIPModal" tabindex="-1" aria-labelledby="addIPModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addIPModalLabel">Add IP Address</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addIPForm">
+                                    <div class="mb-3">
+                                        <label for="ipAddress" class="form-label">IP Address</label>
+                                        <input type="text" class="form-control" id="ipAddress" placeholder="e.g., 192.168.1.1/24" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ipInterface" class="form-label">Interface</label>
+                                        <select class="form-select" id="ipInterface" required>
+                                            <!-- Interfaces will be populated dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ipNetwork" class="form-label">Network</label>
+                                        <input type="text" class="form-control" id="ipNetwork" placeholder="e.g., 192.168.1.0/24">
+                                        <div class="form-text">Optional - will be determined automatically if not specified</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ipComment" class="form-label">Comment</label>
+                                        <input type="text" class="form-control" id="ipComment" placeholder="Optional description">
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="ipDisabled">
+                                        <label class="form-check-label" for="ipDisabled">
+                                            Disabled
+                                        </label>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmAddIPBtn">Add IP Address</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Address List Modal -->
+                <div class="modal fade" id="addAddressListModal" tabindex="-1" aria-labelledby="addAddressListModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addAddressListModalLabel">Add Address List</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addAddressListForm">
+                                    <div class="mb-3">
+                                        <label for="addressListName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="addressListName" placeholder="e.g., blacklist" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="addressListComment" class="form-label">Comment</label>
+                                        <input type="text" class="form-control" id="addressListComment" placeholder="Optional description">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmAddAddressListBtn">Add Address List</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add to Address List Modal -->
+                <div class="modal fade" id="addToAddressListModal" tabindex="-1" aria-labelledby="addToAddressListModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addToAddressListModalLabel">Add to Address List</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addToAddressListForm">
+                                    <div class="mb-3">
+                                        <label for="addressListEntry" class="form-label">Address</label>
+                                        <input type="text" class="form-control" id="addressListEntry" placeholder="e.g., 192.168.1.0/24" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="addressListEntryComment" class="form-label">Comment</label>
+                                        <input type="text" class="form-control" id="addressListEntryComment" placeholder="Optional description">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="addressListEntryTimeout" class="form-label">Timeout</label>
+                                        <input type="text" class="form-control" id="addressListEntryTimeout" placeholder="e.g., 1d, 2h, 30m">
+                                        <div class="form-text">Optional - leave empty for no timeout</div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmAddToAddressListBtn">Add to List</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
+    <script src="/static/js/ip-monitor.js"></script>
+</body>
+</html>

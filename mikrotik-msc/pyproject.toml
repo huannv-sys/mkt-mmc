@@ -1,0 +1,17 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.11",
+    "matplotlib>=3.10.1",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.20",
+    "requests>=2.32.3",
+    "routeros-api>=0.21.0",
+    "tabulate>=0.9.0",
+    "toml>=0.10.2",
+    "uvicorn>=0.34.0",
+    "websockets>=15.0.1",
+]

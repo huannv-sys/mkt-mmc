@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik MSC - Cài Đặt Kết Nối</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">MikroTik MSC</h4>
+                        <p class="text-muted">Management System Center</p>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/dashboard">
+                                <i class="fa-solid fa-gauge-high me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/clients">
+                                <i class="fa-solid fa-laptop me-2"></i>
+                                Clients
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/interfaces">
+                                <i class="fa-solid fa-network-wired me-2"></i>
+                                Interfaces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/ip">
+                                <i class="fa-solid fa-sitemap me-2"></i>
+                                IP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/firewall">
+                                <i class="fa-solid fa-shield-halved me-2"></i>
+                                Firewall
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logs/system">
+                                <i class="fa-solid fa-clipboard-list me-2"></i>
+                                Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backup/manager">
+                                <i class="fa-solid fa-floppy-disk me-2"></i>
+                                Backup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/settings/general">
+                                <i class="fa-solid fa-gear me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Cài Đặt Kết Nối</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" id="saveConnSettingsBtn" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-save me-1"></i> Lưu Cài Đặt
+                            </button>
+                            <button type="button" id="testConnectionBtn" class="btn btn-sm btn-info">
+                                <i class="fa-solid fa-plug me-1"></i> Kiểm Tra Kết Nối
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Navigation -->
+                <ul class="nav nav-tabs mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings/general">
+                            <i class="fa-solid fa-sliders me-1"></i> Chung
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/settings/connection">
+                            <i class="fa-solid fa-plug me-1"></i> Kết Nối
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings/notification">
+                            <i class="fa-solid fa-bell me-1"></i> Thông Báo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings/users">
+                            <i class="fa-solid fa-users me-1"></i> Người Dùng
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Settings Forms -->
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Thiết Bị MikroTik</h5>
+                                <button type="button" id="addDeviceBtn" class="btn btn-sm btn-success">
+                                    <i class="fa-solid fa-plus me-1"></i> Thêm Thiết Bị
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="devicesTable">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Tên</th>
+                                                <th scope="col">Địa Chỉ IP</th>
+                                                <th scope="col">Mô Tả</th>
+                                                <th scope="col">Trạng Thái</th>
+                                                <th scope="col">Thao Tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Router Chính</td>
+                                                <td>10.0.0.1</td>
+                                                <td>Router chính của hệ thống</td>
+                                                <td><span class="badge bg-success">Kết nối</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary edit-device" data-id="1">
+                                                        <i class="fa-solid fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-device" data-id="1">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Router Phòng Kỹ Thuật</td>
+                                                <td>10.0.0.2</td>
+                                                <td>Router phòng kỹ thuật</td>
+                                                <td><span class="badge bg-danger">Ngắt kết nối</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary edit-device" data-id="2">
+                                                        <i class="fa-solid fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-device" data-id="2">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Cài Đặt API</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="apiSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="apiTimeout" class="form-label">Timeout Kết Nối (giây)</label>
+                                        <input type="number" class="form-control" id="apiTimeout" name="apiTimeout" min="5" max="60" value="10">
+                                        <div class="form-text">Thời gian chờ kết nối API</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="apiRetries" class="form-label">Số Lần Thử Lại</label>
+                                        <input type="number" class="form-control" id="apiRetries" name="apiRetries" min="0" max="10" value="3">
+                                        <div class="form-text">Số lần thử lại khi kết nối thất bại</div>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="apiSsl" name="apiSsl">
+                                        <label class="form-check-label" for="apiSsl">Sử Dụng SSL</label>
+                                        <div class="form-text">Kết nối API qua SSL (Port mặc định: 8729)</div>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="apiKeepAlive" name="apiKeepAlive" checked>
+                                        <label class="form-check-label" for="apiKeepAlive">Giữ Kết Nối</label>
+                                        <div class="form-text">Duy trì kết nối API liên tục</div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Cài Đặt Database</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="dbSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="dbType" class="form-label">Loại Database</label>
+                                        <select class="form-select" id="dbType" name="dbType">
+                                            <option value="mongodb" selected>MongoDB</option>
+                                            <option value="sqlite">SQLite</option>
+                                            <option value="postgresql">PostgreSQL</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="dbHost" class="form-label">Host</label>
+                                        <input type="text" class="form-control" id="dbHost" name="dbHost" value="localhost">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="dbPort" class="form-label">Port</label>
+                                        <input type="number" class="form-control" id="dbPort" name="dbPort" value="27017">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="dbName" class="form-label">Tên Database</label>
+                                        <input type="text" class="form-control" id="dbName" name="dbName" value="mikrotik_msc">
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="dbAuth" name="dbAuth">
+                                        <label class="form-check-label" for="dbAuth">Sử Dụng Xác Thực</label>
+                                    </div>
+                                    <div class="mb-3 d-none" id="dbUserField">
+                                        <label for="dbUser" class="form-label">Tên Đăng Nhập</label>
+                                        <input type="text" class="form-control" id="dbUser" name="dbUser">
+                                    </div>
+                                    <div class="mb-3 d-none" id="dbPasswordField">
+                                        <label for="dbPassword" class="form-label">Mật Khẩu</label>
+                                        <input type="password" class="form-control" id="dbPassword" name="dbPassword">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal fade" id="deviceModal" tabindex="-1" aria-labelledby="deviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deviceModalLabel">Thêm Thiết Bị MikroTik</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deviceForm">
+                        <input type="hidden" id="deviceId" name="deviceId">
+                        <div class="mb-3">
+                            <label for="deviceName" class="form-label">Tên Thiết Bị</label>
+                            <input type="text" class="form-control" id="deviceName" name="deviceName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceIp" class="form-label">Địa Chỉ IP</label>
+                            <input type="text" class="form-control" id="deviceIp" name="deviceIp" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="devicePort" class="form-label">API Port</label>
+                            <input type="number" class="form-control" id="devicePort" name="devicePort" value="8728">
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceUsername" class="form-label">Tên Đăng Nhập</label>
+                            <input type="text" class="form-control" id="deviceUsername" name="deviceUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="devicePassword" class="form-label">Mật Khẩu</label>
+                            <input type="password" class="form-control" id="devicePassword" name="devicePassword" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="deviceSsl" name="deviceSsl">
+                            <label class="form-check-label" for="deviceSsl">Sử Dụng SSL</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceDescription" class="form-label">Mô Tả</label>
+                            <textarea class="form-control" id="deviceDescription" name="deviceDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="saveDeviceBtn">Lưu Thiết Bị</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="/static/js/settings/connection.js"></script>
+</body>
+</html>

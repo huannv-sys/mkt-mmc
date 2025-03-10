@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Analysis Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Code Analysis Report</h1>
+            {% if results.get('error') %}
+                <div class="error-message">
+                    {{ results.error }}
+                </div>
+            {% else %}
+                <p>Repository: {{ results.repository }}</p>
+                <p>Analysis Time: {{ results.timestamp }}</p>
+            {% endif %}
+        </header>
+
+        {% if not results.get('error') %}
+            <section class="analysis-section" id="structure">
+                <h2>Code Structure Analysis</h2>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <h3>Total Files</h3>
+                        <p>{{ results.structure.total_files }}</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Directory Depth</h3>
+                        <p>{{ results.structure.directory_depth }}</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="fileTypesChart"></canvas>
+                </div>
+                <!-- Hidden data for chart -->
+                <script id="fileTypesData" type="application/json">
+                    {{ results.file_types_data | safe }}
+                </script>
+            </section>
+
+            <section class="analysis-section" id="performance">
+                <h2>Performance Analysis</h2>
+                <div class="complexity-scores">
+                    <h3>Complexity Scores</h3>
+                    <ul>
+                        {% for score in results.performance.complexity_scores %}
+                        <li>{{ score.file }}: {{ score.score }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="large-files">
+                    <h3>Large Files (>1MB)</h3>
+                    <ul>
+                        {% for file in results.performance.large_files %}
+                        <li>{{ file }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </section>
+
+            <section class="analysis-section" id="security">
+                <h2>Security Analysis</h2>
+                <div class="vulnerabilities">
+                    <h3>Detected Vulnerabilities</h3>
+                    {% if results.security.vulnerabilities %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>File</th>
+                                    <th>Line</th>
+                                    <th>Issue</th>
+                                    <th>Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vuln in results.security.vulnerabilities %}
+                                <tr>
+                                    <td>{{ vuln.file }}</td>
+                                    <td>{{ vuln.line }}</td>
+                                    <td>{{ vuln.issue }}</td>
+                                    <td class="severity-{{ vuln.severity }}">{{ vuln.severity }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No vulnerabilities detected.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="analysis-section" id="integration">
+                <h2>Integration Analysis</h2>
+                <div class="dependencies">
+                    <h3>Dependencies</h3>
+                    {% if results.integration.dependencies %}
+                        <ul>
+                            {% for dep in results.integration.dependencies %}
+                            <li>{{ dep }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No dependencies found.</p>
+                    {% endif %}
+                </div>
+                <div class="external-services">
+                    <h3>External Service Usage</h3>
+                    {% if results.integration.external_services %}
+                        <ul>
+                            {% for service in results.integration.external_services %}
+                            <li>{{ service }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No external services detected.</p>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

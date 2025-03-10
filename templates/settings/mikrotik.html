@@ -1,0 +1,341 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Cài đặt kết nối MikroTik{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-cog fa-fw me-2"></i> Cài đặt chung
+                </a>
+                <a href="{{ url_for('settings_mikrotik') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-network-wired fa-fw me-2"></i> Cài đặt kết nối MikroTik
+                </a>
+                <a href="{{ url_for('settings_notification') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-bell fa-fw me-2"></i> Cài đặt thông báo
+                </a>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-network-wired fa-fw me-2"></i> Cài đặt kết nối MikroTik
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="mikrotikSettingsForm">
+                        <div class="mb-3">
+                            <label for="host" class="form-label">Địa chỉ máy chủ</label>
+                            <input type="text" class="form-control" id="host" name="host" 
+                                   placeholder="192.168.1.1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="port" class="form-label">Cổng API</label>
+                            <input type="number" class="form-control" id="port" name="port" 
+                                   placeholder="8728" value="8728">
+                            <div class="form-text">Mặc định: 8728 (API), 8729 (API-SSL)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   placeholder="admin" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="timeout" class="form-label">Thời gian chờ kết nối (giây)</label>
+                            <input type="number" class="form-control" id="timeout" name="timeout" 
+                                   placeholder="10" value="10">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" id="testConnectionBtn" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-plug"></i> Kiểm tra kết nối
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Lưu cài đặt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle fa-fw me-2"></i> Thông tin thiết bị
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="deviceInfoLoading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải thông tin thiết bị...</p>
+                    </div>
+                    
+                    <div id="deviceInfoContent" style="display: none;">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th scope="row" width="30%">Tên thiết bị</th>
+                                    <td id="deviceName"></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Model</th>
+                                    <td id="deviceModel"></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Phiên bản firmware</th>
+                                    <td id="deviceFirmware"></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Thời gian hoạt động</th>
+                                    <td id="deviceUptime"></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">CPU</th>
+                                    <td id="deviceCPU"></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Bộ nhớ</th>
+                                    <td id="deviceMemory"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="deviceInfoError" class="alert alert-danger" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="deviceInfoErrorMessage">Không thể kết nối đến thiết bị MikroTik</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mikrotikSettingsForm = document.getElementById('mikrotikSettingsForm');
+    const testConnectionBtn = document.getElementById('testConnectionBtn');
+    const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+    
+    // Load settings from server
+    async function loadSettings() {
+        try {
+            showDeviceInfoLoading();
+            
+            // Simulate loading settings (replace with actual API call)
+            const response = await fetch('/api/settings/mikrotik');
+            const data = await response.json();
+            
+            if (data.success) {
+                populateForm(data.settings);
+                if (data.is_connected) {
+                    loadDeviceInfo();
+                } else {
+                    showDeviceInfoError("Không có kết nối đến thiết bị MikroTik");
+                }
+            } else {
+                showToast('error', data.error || 'Không thể tải cài đặt');
+                showDeviceInfoError(data.error || "Không thể tải cài đặt");
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showToast('error', 'Lỗi kết nối khi tải cài đặt');
+            showDeviceInfoError("Lỗi kết nối khi tải cài đặt");
+        }
+    }
+    
+    // Populate form with settings
+    function populateForm(settings) {
+        document.getElementById('host').value = settings.host || '';
+        document.getElementById('port').value = settings.port || '8728';
+        document.getElementById('username').value = settings.username || '';
+        document.getElementById('password').value = settings.password || '';
+        document.getElementById('timeout').value = settings.timeout || '10';
+    }
+    
+    // Save settings
+    async function saveSettings(event) {
+        event.preventDefault();
+        
+        const formData = {
+            host: document.getElementById('host').value,
+            port: document.getElementById('port').value,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            timeout: document.getElementById('timeout').value
+        };
+        
+        try {
+            const response = await fetch('/api/settings/mikrotik/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('success', data.message || 'Đã lưu cài đặt thành công');
+                loadDeviceInfo();
+            } else {
+                showToast('error', data.error || 'Không thể lưu cài đặt');
+            }
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showToast('error', 'Lỗi kết nối khi lưu cài đặt');
+        }
+    }
+    
+    // Test connection
+    async function testConnection() {
+        const formData = {
+            host: document.getElementById('host').value,
+            port: document.getElementById('port').value,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            timeout: document.getElementById('timeout').value
+        };
+        
+        try {
+            showDeviceInfoLoading();
+            
+            const response = await fetch('/api/settings/mikrotik/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('success', 'Kết nối thành công đến thiết bị MikroTik');
+                displayDeviceInfo(data.device_info);
+            } else {
+                showToast('error', data.error || 'Không thể kết nối đến thiết bị MikroTik');
+                showDeviceInfoError(data.error || "Không thể kết nối đến thiết bị MikroTik");
+            }
+        } catch (error) {
+            console.error('Error testing connection:', error);
+            showToast('error', 'Lỗi kết nối khi kiểm tra kết nối');
+            showDeviceInfoError("Lỗi kết nối khi kiểm tra kết nối");
+        }
+    }
+    
+    // Load device info
+    async function loadDeviceInfo() {
+        try {
+            showDeviceInfoLoading();
+            
+            const response = await fetch('/api/settings/mikrotik/info');
+            const data = await response.json();
+            
+            if (data.success) {
+                displayDeviceInfo(data.device_info);
+            } else {
+                showDeviceInfoError(data.error || "Không thể tải thông tin thiết bị");
+            }
+        } catch (error) {
+            console.error('Error loading device info:', error);
+            showDeviceInfoError("Lỗi kết nối khi tải thông tin thiết bị");
+        }
+    }
+    
+    // Display device info
+    function displayDeviceInfo(info) {
+        document.getElementById('deviceName').textContent = info.name || 'N/A';
+        document.getElementById('deviceModel').textContent = info.model || 'N/A';
+        document.getElementById('deviceFirmware').textContent = info.firmware || 'N/A';
+        document.getElementById('deviceUptime').textContent = info.uptime || 'N/A';
+        document.getElementById('deviceCPU').textContent = info.cpu_load ? `${info.cpu_load}%` : 'N/A';
+        document.getElementById('deviceMemory').textContent = info.memory 
+            ? `${info.memory.used} MB / ${info.memory.total} MB (${info.memory.percent}%)` 
+            : 'N/A';
+        
+        document.getElementById('deviceInfoLoading').style.display = 'none';
+        document.getElementById('deviceInfoContent').style.display = 'block';
+        document.getElementById('deviceInfoError').style.display = 'none';
+    }
+    
+    // Show device info loading
+    function showDeviceInfoLoading() {
+        document.getElementById('deviceInfoLoading').style.display = 'block';
+        document.getElementById('deviceInfoContent').style.display = 'none';
+        document.getElementById('deviceInfoError').style.display = 'none';
+    }
+    
+    // Show device info error
+    function showDeviceInfoError(message) {
+        document.getElementById('deviceInfoErrorMessage').textContent = message;
+        document.getElementById('deviceInfoLoading').style.display = 'none';
+        document.getElementById('deviceInfoContent').style.display = 'none';
+        document.getElementById('deviceInfoError').style.display = 'block';
+    }
+    
+    // Show toast message
+    function showToast(type, message) {
+        const toastEl = document.getElementById('notificationToast');
+        const toastBody = toastEl.querySelector('.toast-body');
+        
+        // Set toast color based on type
+        toastEl.className = 'toast align-items-center';
+        if (type === 'success') {
+            toastEl.classList.add('text-bg-success');
+        } else if (type === 'error') {
+            toastEl.classList.add('text-bg-danger');
+        } else {
+            toastEl.classList.add('text-bg-info');
+        }
+        
+        toastBody.textContent = message;
+        toast.show();
+    }
+    
+    // Event listeners
+    mikrotikSettingsForm.addEventListener('submit', saveSettings);
+    testConnectionBtn.addEventListener('click', testConnection);
+    
+    // Initial setup
+    loadSettings();
+    
+    // Demo data for testing
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        populateForm({
+            host: '192.168.1.1',
+            port: '8728',
+            username: 'admin',
+            password: '',
+            timeout: '10'
+        });
+    }
+});
+</script>
+{% endblock %}

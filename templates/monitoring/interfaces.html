@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik Network Master Control - Interfaces</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        .interface-card {
+            transition: transform 0.2s ease;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .interface-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .interface-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        .interface-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .status-active {
+            background-color: #198754;
+        }
+        .status-inactive {
+            background-color: #6c757d;
+        }
+        .status-warning {
+            background-color: #ffc107;
+        }
+        .status-error {
+            background-color: #dc3545;
+        }
+        .traffic-detail {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .traffic-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .traffic-label {
+            color: #212529;
+        }
+        .interface-type-tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+        .card-header {
+            border-radius: 0;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .interface-detail-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .interface-detail-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .interface-detail-list li:last-child {
+            border-bottom: none;
+        }
+        .interface-detail-label {
+            font-weight: 500;
+            color: #495057;
+        }
+        .chart-container {
+            height: 400px;
+        }
+        #interfaces-map svg {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">
+            <i class="bi bi-router-fill"></i> MikroTik MSC
+        </a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100 d-flex align-items-center">
+            <div class="dropdown ms-auto me-2">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-hdd-network"></i> Chọn thiết bị
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="deviceList" aria-labelledby="deviceDropdown">
+                    <!-- Device list will be loaded dynamically -->
+                </ul>
+            </div>
+            <div class="me-2">
+                <button class="btn btn-light" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Giám sát</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/dashboard">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/monitoring/interfaces">
+                                <i class="bi bi-ethernet"></i> Interfaces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/clients">
+                                <i class="bi bi-pc-display"></i> Clients
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/wireless">
+                                <i class="bi bi-wifi"></i> Wireless
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Quản lý</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/firewall">
+                                <i class="bi bi-shield-check"></i> Firewall
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/dhcp">
+                                <i class="bi bi-diagram-3"></i> DHCP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/vpn">
+                                <i class="bi bi-unlock"></i> VPN
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/capsman">
+                                <i class="bi bi-broadcast-pin"></i> CAPsMAN
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Hệ thống</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/backup">
+                                <i class="bi bi-cloud-arrow-up"></i> Backup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/settings">
+                                <i class="bi bi-gear"></i> Cài đặt
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Interface Monitor</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="all-interfaces-btn">All</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="ethernet-interfaces-btn">Ethernet</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="wireless-interfaces-btn">Wireless</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="vlan-interfaces-btn">VLAN</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="bridge-interfaces-btn">Bridge</button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-graph-up"></i> View
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item" href="#" id="view-cards">Card View</a></li>
+                                <li><a class="dropdown-item" href="#" id="view-table">Table View</a></li>
+                                <li><a class="dropdown-item" href="#" id="view-map">Network Map</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Overview Cards -->
+                <div class="row">
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Interfaces</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-interfaces-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-hdd-network fs-2 text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Interfaces</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-interfaces-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-ethernet fs-2 text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Traffic In/Out</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-traffic">0 B</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-arrow-down-up fs-2 text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Most Active Interface</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="most-active-interface">-</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-activity fs-2 text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Traffic Chart -->
+                <div class="row mb-4">
+                    <div class="col-lg-12">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Interface Traffic Comparison</h6>
+                                <div class="dropdown no-arrow">
+                                    <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="chartTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span id="selected-chart-type">Line Chart</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chartTypeDropdown">
+                                        <li><a class="dropdown-item" href="#" data-chart-type="line">Line Chart</a></li>
+                                        <li><a class="dropdown-item" href="#" data-chart-type="bar">Bar Chart</a></li>
+                                        <li><a class="dropdown-item" href="#" data-chart-type="pie">Pie Chart</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="interfacesTrafficChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Cards View (Default) -->
+                <div id="interfaces-cards-view" class="mb-4">
+                    <div class="row" id="interfaces-cards-container">
+                        <!-- Interface cards will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Interface Table View (Hidden by default) -->
+                <div id="interfaces-table-view" class="mb-4 d-none">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Interfaces</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="interfaces-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>MAC Address</th>
+                                            <th>MTU</th>
+                                            <th>RX Traffic</th>
+                                            <th>TX Traffic</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Interface data will be loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Network Map View (Hidden by default) -->
+                <div id="interfaces-map-view" class="mb-4 d-none">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Network Map</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="interfaces-map" class="text-center">
+                                <!-- Network map will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Detail Modal -->
+                <div class="modal fade" id="interfaceDetailModal" tabindex="-1" aria-labelledby="interfaceDetailModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="interfaceDetailModalLabel">Interface Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="font-weight-bold">Basic Information</h6>
+                                        <ul class="interface-detail-list">
+                                            <li>
+                                                <span class="interface-detail-label">Name:</span>
+                                                <span id="detail-name">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">Type:</span>
+                                                <span id="detail-type">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">MAC Address:</span>
+                                                <span id="detail-mac-address">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">MTU:</span>
+                                                <span id="detail-mtu">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">Status:</span>
+                                                <span id="detail-status">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">Enabled:</span>
+                                                <span id="detail-enabled">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">Last Updated:</span>
+                                                <span id="detail-last-updated">-</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="font-weight-bold">Traffic Statistics</h6>
+                                        <ul class="interface-detail-list">
+                                            <li>
+                                                <span class="interface-detail-label">TX Rate:</span>
+                                                <span id="detail-tx-rate">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">RX Rate:</span>
+                                                <span id="detail-rx-rate">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">TX Bytes:</span>
+                                                <span id="detail-tx-bytes">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">RX Bytes:</span>
+                                                <span id="detail-rx-bytes">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">TX Packets:</span>
+                                                <span id="detail-tx-packets">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">RX Packets:</span>
+                                                <span id="detail-rx-packets">-</span>
+                                            </li>
+                                            <li>
+                                                <span class="interface-detail-label">Errors:</span>
+                                                <span id="detail-errors">-</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h6 class="font-weight-bold">Traffic History</h6>
+                                        <div class="chart-area">
+                                            <canvas id="interfaceTrafficChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-success" id="detail-enable-btn">Enable</button>
+                                <button type="button" class="btn btn-danger" id="detail-disable-btn">Disable</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="/static/js/interfaces.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+backup:
+  directory: "/var/backups/mikrotik"
+  schedule: "0 2 * * *"  # 2AM hàng ngày
+
+capsman:
+  controller_ip: "10.0.0.1"
+  username: "capsman-admin"
+  password: "securepass123"
+  discovery_interface: "ether1"
+  provisioning_profile: "default-profile"
+
+devices:
+  - ip: "10.0.0.1"
+    username: "admin"
+    password: "adminpass"
+  - ip: "10.0.0.2"
+    username: "admin"
+    password: "adminpass"

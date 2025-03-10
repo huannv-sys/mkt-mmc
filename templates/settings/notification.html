@@ -1,0 +1,368 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Cài đặt thông báo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-cog fa-fw me-2"></i> Cài đặt chung
+                </a>
+                <a href="{{ url_for('settings_mikrotik') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-network-wired fa-fw me-2"></i> Cài đặt kết nối MikroTik
+                </a>
+                <a href="{{ url_for('settings_notification') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-bell fa-fw me-2"></i> Cài đặt thông báo
+                </a>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell fa-fw me-2"></i> Cài đặt thông báo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="notificationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="sms-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#sms-tab-pane" type="button" role="tab" 
+                                    aria-controls="sms-tab-pane" aria-selected="true">SMS</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="email-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#email-tab-pane" type="button" role="tab" 
+                                    aria-controls="email-tab-pane" aria-selected="false">Email</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="webhook-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#webhook-tab-pane" type="button" role="tab" 
+                                    aria-controls="webhook-tab-pane" aria-selected="false">Webhook</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content p-3" id="notificationTabsContent">
+                        <!-- SMS Settings -->
+                        <div class="tab-pane fade show active" id="sms-tab-pane" role="tabpanel" 
+                             aria-labelledby="sms-tab" tabindex="0">
+                            <form id="smsSettingsForm">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           id="smsEnabled" name="enabled">
+                                    <label class="form-check-label" for="smsEnabled">
+                                        Bật thông báo SMS
+                                    </label>
+                                </div>
+                                
+                                <div id="smsSettings" class="border rounded p-3 mb-3">
+                                    <h6 class="mb-3">Cài đặt Twilio</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="twilioAccountSid" class="form-label">Account SID</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="twilioAccountSid" 
+                                                   name="twilio_account_sid">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-question-circle text-primary" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="Tìm thấy trong trang tổng quan Twilio"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="twilioAuthToken" class="form-label">Auth Token</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="twilioAuthToken" 
+                                                   name="twilio_auth_token">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-eye" id="toggleAuthToken"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="twilioPhoneNumber" class="form-label">Số điện thoại Twilio</label>
+                                        <input type="text" class="form-control" id="twilioPhoneNumber" 
+                                               name="twilio_phone_number" placeholder="+12345678901">
+                                        <div class="form-text">Định dạng E.164, ví dụ: +12345678901</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultRecipients" class="form-label">Danh sách số điện thoại mặc định</label>
+                                        <input type="text" class="form-control" id="defaultRecipients" 
+                                               name="default_recipients" placeholder="+84123456789,+84987654321">
+                                        <div class="form-text">Phân cách bằng dấu phẩy</div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info small">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Để sử dụng thông báo SMS, bạn cần một tài khoản <a href="https://www.twilio.com" target="_blank">Twilio</a>. 
+                                        Đăng ký và nhận Account SID, Auth Token, và số điện thoại Twilio.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button type="button" id="testSmsBtn" class="btn btn-outline-primary me-2">
+                                        <i class="fas fa-paper-plane"></i> Test SMS
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Lưu cài đặt
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Email Settings -->
+                        <div class="tab-pane fade" id="email-tab-pane" role="tabpanel" 
+                             aria-labelledby="email-tab" tabindex="0">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Tính năng thông báo email sẽ sớm được bổ sung.
+                            </div>
+                        </div>
+                        
+                        <!-- Webhook Settings -->
+                        <div class="tab-pane fade" id="webhook-tab-pane" role="tabpanel" 
+                             aria-labelledby="webhook-tab" tabindex="0">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Tính năng webhook sẽ sớm được bổ sung.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test SMS Modal -->
+<div class="modal fade" id="testSmsModal" tabindex="-1" aria-labelledby="testSmsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testSmsModalLabel">Gửi SMS thử nghiệm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testSmsForm">
+                    <div class="mb-3">
+                        <label for="testPhoneNumber" class="form-label">Số điện thoại nhận</label>
+                        <input type="tel" class="form-control" id="testPhoneNumber" 
+                               placeholder="+84123456789" required>
+                        <div class="form-text">Định dạng E.164, ví dụ: +84123456789</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="testMessage" class="form-label">Nội dung tin nhắn</label>
+                        <textarea class="form-control" id="testMessage" rows="3" 
+                                 placeholder="Tin nhắn thử nghiệm từ MikroTik MSC" required></textarea>
+                    </div>
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle"></i> 
+                        Tin nhắn sẽ được gửi bằng cài đặt Twilio hiện tại trên form. 
+                        Nếu cài đặt SMS bị tắt, tin nhắn sẽ được gửi bằng cấu hình Twilio trong file .env (nếu có).
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="sendTestSmsBtn">
+                    <span class="spinner-border spinner-border-sm d-none" id="sendSmsSpinner" role="status" aria-hidden="true"></span>
+                    <i class="fas fa-paper-plane" id="sendSmsIcon"></i> Gửi tin nhắn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const smsSettingsForm = document.getElementById('smsSettingsForm');
+    const smsEnabled = document.getElementById('smsEnabled');
+    const smsSettings = document.getElementById('smsSettings');
+    const testSmsBtn = document.getElementById('testSmsBtn');
+    const testSmsModal = new bootstrap.Modal(document.getElementById('testSmsModal'));
+    const sendTestSmsBtn = document.getElementById('sendTestSmsBtn');
+    const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+    
+    // Toggle SMS settings based on enabled state
+    function toggleSmsSettings() {
+        smsSettings.style.display = smsEnabled.checked ? 'block' : 'none';
+    }
+    
+    // Load settings from server
+    async function loadSettings() {
+        try {
+            // Simulate loading settings (replace with actual API call)
+            const response = await fetch('/api/settings/notification/sms');
+            const data = await response.json();
+            
+            if (data.success) {
+                populateForm(data.settings);
+            } else {
+                showToast('error', data.error || 'Không thể tải cài đặt');
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showToast('error', 'Lỗi kết nối khi tải cài đặt');
+        }
+    }
+    
+    // Populate form with settings
+    function populateForm(settings) {
+        smsEnabled.checked = settings.enabled;
+        document.getElementById('twilioAccountSid').value = settings.twilio_account_sid || '';
+        document.getElementById('twilioAuthToken').value = settings.twilio_auth_token || '';
+        document.getElementById('twilioPhoneNumber').value = settings.twilio_phone_number || '';
+        document.getElementById('defaultRecipients').value = settings.default_recipients || '';
+        
+        toggleSmsSettings();
+    }
+    
+    // Save settings
+    async function saveSettings(event) {
+        event.preventDefault();
+        
+        const formData = {
+            enabled: smsEnabled.checked,
+            twilio_account_sid: document.getElementById('twilioAccountSid').value,
+            twilio_auth_token: document.getElementById('twilioAuthToken').value,
+            twilio_phone_number: document.getElementById('twilioPhoneNumber').value,
+            default_recipients: document.getElementById('defaultRecipients').value
+        };
+        
+        try {
+            const response = await fetch('/api/settings/notification/sms/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('success', data.message || 'Đã lưu cài đặt thành công');
+            } else {
+                showToast('error', data.error || 'Không thể lưu cài đặt');
+            }
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showToast('error', 'Lỗi kết nối khi lưu cài đặt');
+        }
+    }
+    
+    // Send test SMS
+    async function sendTestSms() {
+        const phoneNumber = document.getElementById('testPhoneNumber').value;
+        const message = document.getElementById('testMessage').value;
+        const sendSmsSpinner = document.getElementById('sendSmsSpinner');
+        const sendSmsIcon = document.getElementById('sendSmsIcon');
+        const sendTestSmsBtn = document.getElementById('sendTestSmsBtn');
+        
+        if (!phoneNumber || !message) {
+            showToast('error', 'Vui lòng nhập đầy đủ số điện thoại và nội dung tin nhắn');
+            return;
+        }
+        
+        // Hiển thị spinner và vô hiệu hóa nút
+        sendSmsSpinner.classList.remove('d-none');
+        sendSmsIcon.classList.add('d-none');
+        sendTestSmsBtn.disabled = true;
+        
+        // Get current SMS settings from form
+        const twilioSettings = {
+            account_sid: document.getElementById('twilioAccountSid').value,
+            auth_token: document.getElementById('twilioAuthToken').value,
+            phone_number: document.getElementById('twilioPhoneNumber').value
+        };
+        
+        try {
+            const response = await fetch('/api/notifications/test-sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    message: message,
+                    twilio_settings: smsEnabled.checked ? twilioSettings : null
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Ẩn spinner và bỏ vô hiệu hóa nút
+            sendSmsSpinner.classList.add('d-none');
+            sendSmsIcon.classList.remove('d-none');
+            sendTestSmsBtn.disabled = false;
+            
+            if (data.success) {
+                showToast('success', data.message || 'Đã gửi tin nhắn thành công');
+                testSmsModal.hide();
+            } else {
+                showToast('error', data.error || 'Không thể gửi tin nhắn');
+            }
+        } catch (error) {
+            console.error('Error sending test SMS:', error);
+            
+            // Ẩn spinner và bỏ vô hiệu hóa nút
+            sendSmsSpinner.classList.add('d-none');
+            sendSmsIcon.classList.remove('d-none');
+            sendTestSmsBtn.disabled = false;
+            
+            showToast('error', 'Lỗi kết nối khi gửi tin nhắn: ' + error.message);
+        }
+    }
+    
+    // Show toast message
+    function showToast(type, message) {
+        const toastEl = document.getElementById('notificationToast');
+        const toastBody = toastEl.querySelector('.toast-body');
+        
+        // Set toast color based on type
+        toastEl.className = 'toast align-items-center';
+        if (type === 'success') {
+            toastEl.classList.add('text-bg-success');
+        } else if (type === 'error') {
+            toastEl.classList.add('text-bg-danger');
+        } else {
+            toastEl.classList.add('text-bg-info');
+        }
+        
+        toastBody.textContent = message;
+        toast.show();
+    }
+    
+    // Event listeners
+    smsEnabled.addEventListener('change', toggleSmsSettings);
+    smsSettingsForm.addEventListener('submit', saveSettings);
+    
+    testSmsBtn.addEventListener('click', function() {
+        testSmsModal.show();
+    });
+    
+    sendTestSmsBtn.addEventListener('click', sendTestSms);
+    
+    // Initial setup
+    toggleSmsSettings();
+    
+    // Tải cài đặt từ server
+    loadSettings();
+});
+</script>
+{% endblock %}

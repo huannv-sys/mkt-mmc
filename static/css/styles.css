@@ -1,0 +1,219 @@
+/* Main Styles for MikroTik MSC */
+
+body {
+    background-color: #f5f5f5;
+}
+
+/* Sidebar */
+.sidebar {
+    min-width: 260px;
+    background-color: #f8f9fa;
+    height: 100%;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: .75rem 1rem;
+    border-radius: 0.25rem;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #e9ecef;
+}
+
+.sidebar .nav-link.active {
+    background-color: #1e88e5;
+    color: #ffffff;
+}
+
+.sidebar .nav-link i {
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-active {
+    background-color: #28a745;
+}
+
+.status-inactive {
+    background-color: #dc3545;
+}
+
+.status-warning {
+    background-color: #ffc107;
+}
+
+/* Dashboard Stats */
+.stat-card {
+    padding: 1.25rem;
+    border-radius: 0.375rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card .icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+}
+
+.stat-card-primary {
+    background: linear-gradient(45deg, #1e88e5, #42a5f5);
+    color: white;
+}
+
+.stat-card-success {
+    background: linear-gradient(45deg, #43a047, #66bb6a);
+    color: white;
+}
+
+.stat-card-warning {
+    background: linear-gradient(45deg, #fb8c00, #ffb74d);
+    color: white;
+}
+
+.stat-card-danger {
+    background: linear-gradient(45deg, #e53935, #ef5350);
+    color: white;
+}
+
+/* Tables */
+.table {
+    background-color: #ffffff;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Forms */
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 136, 229, 0.25);
+    border-color: #1e88e5;
+}
+
+/* Traffic Charts */
+.traffic-chart-container {
+    height: 300px;
+    width: 100%;
+}
+
+/* Settings */
+.settings-tab-content {
+    padding: 1.5rem;
+}
+
+/* Login Page */
+.login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header img {
+    max-width: 150px;
+    margin-bottom: 1rem;
+}
+
+/* Interface Status */
+.interface-up {
+    color: #28a745;
+}
+
+.interface-down {
+    color: #dc3545;
+}
+
+/* Resource Meters */
+.resource-meter {
+    height: 5px;
+    border-radius: 2px;
+    margin: 5px 0;
+}
+
+.resource-meter-fill {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.resource-meter-low {
+    background-color: #28a745;
+}
+
+.resource-meter-medium {
+    background-color: #ffc107;
+}
+
+.resource-meter-high {
+    background-color: #dc3545;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .traffic-chart-container {
+        height: 200px;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik Network Master Control - Clients</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap5.min.css">
+</head>
+<body>
+    <header class="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">
+            <i class="bi bi-router-fill"></i> MikroTik MSC
+        </a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100 d-flex align-items-center">
+            <div class="dropdown ms-auto me-2">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-hdd-network"></i> Chọn thiết bị
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="deviceList" aria-labelledby="deviceDropdown">
+                    <!-- Device list will be loaded dynamically -->
+                </ul>
+            </div>
+            <div class="me-2">
+                <button class="btn btn-light" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Giám sát</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/dashboard">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/interfaces">
+                                <i class="bi bi-ethernet"></i> Interfaces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/monitoring/clients">
+                                <i class="bi bi-pc-display"></i> Clients
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/monitoring/wireless">
+                                <i class="bi bi-wifi"></i> Wireless
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Quản lý</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/firewall">
+                                <i class="bi bi-shield-check"></i> Firewall
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/dhcp">
+                                <i class="bi bi-diagram-3"></i> DHCP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/vpn">
+                                <i class="bi bi-unlock"></i> VPN
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/management/capsman">
+                                <i class="bi bi-broadcast-pin"></i> CAPsMAN
+                            </a>
+                        </li>
+                    </ul>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Hệ thống</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/backup">
+                                <i class="bi bi-cloud-arrow-up"></i> Backup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/system/settings">
+                                <i class="bi bi-gear"></i> Cài đặt
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Client Management</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="all-clients-btn">All Clients</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="wireless-clients-btn">Wireless</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="dhcp-leases-btn">DHCP Leases</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="blocked-clients-btn">Blocked</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#blockClientModal">
+                            <i class="bi bi-shield-fill-x"></i> Block Client
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Client Overview Cards -->
+                <div class="row">
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Clients</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-clients-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-people fs-2 text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Wireless Clients</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="wireless-clients-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-wifi fs-2 text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">DHCP Leases</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="dhcp-leases-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-diagram-3 fs-2 text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-xl-3 mb-4">
+                        <div class="card border-left-danger shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Blocked Clients</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="blocked-clients-count">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-shield-fill-x fs-2 text-danger"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <span id="client-table-title">All Clients</span>
+                        </h6>
+                        <div class="dropdown no-arrow">
+                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-download"></i> Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                                <li><a class="dropdown-item" href="#" id="export-csv">CSV</a></li>
+                                <li><a class="dropdown-item" href="#" id="export-pdf">PDF</a></li>
+                                <li><a class="dropdown-item" href="#" id="export-excel">Excel</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="clients-table" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Hostname</th>
+                                        <th>IP Address</th>
+                                        <th>MAC Address</th>
+                                        <th>Interface</th>
+                                        <th>Connection</th>
+                                        <th>Traffic</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Client data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Detail Modal -->
+                <div class="modal fade" id="clientDetailModal" tabindex="-1" aria-labelledby="clientDetailModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="clientDetailModalLabel">Client Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="font-weight-bold">Basic Information</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th>Hostname:</th>
+                                                <td id="detail-hostname">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>IP Address:</th>
+                                                <td id="detail-ip">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>MAC Address:</th>
+                                                <td id="detail-mac">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Interface:</th>
+                                                <td id="detail-interface">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Connection Type:</th>
+                                                <td id="detail-connection-type">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Status:</th>
+                                                <td id="detail-status">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Last Activity:</th>
+                                                <td id="detail-last-activity">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Comment:</th>
+                                                <td id="detail-comment">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="font-weight-bold">Traffic Statistics</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th>TX Rate:</th>
+                                                <td id="detail-tx-rate">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>RX Rate:</th>
+                                                <td id="detail-rx-rate">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>TX Bytes:</th>
+                                                <td id="detail-tx-bytes">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>RX Bytes:</th>
+                                                <td id="detail-rx-bytes">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Signal Strength:</th>
+                                                <td id="detail-signal-strength">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Uptime:</th>
+                                                <td id="detail-uptime">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h6 class="font-weight-bold">Traffic History</h6>
+                                        <div class="chart-area">
+                                            <canvas id="clientTrafficChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" id="detail-block-btn">Block Client</button>
+                                <button type="button" class="btn btn-success" id="detail-unblock-btn">Unblock Client</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Block Client Modal -->
+                <div class="modal fade" id="blockClientModal" tabindex="-1" aria-labelledby="blockClientModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="blockClientModalLabel">Block Client</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="block-client-form">
+                                    <div class="mb-3">
+                                        <label for="block-ip" class="form-label">IP Address</label>
+                                        <input type="text" class="form-control" id="block-ip" placeholder="e.g., 192.168.1.100">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="block-mac" class="form-label">MAC Address</label>
+                                        <input type="text" class="form-control" id="block-mac" placeholder="e.g., 00:11:22:33:44:55">
+                                        <div class="form-text">Enter at least one: IP Address or MAC Address</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="block-comment" class="form-label">Comment</label>
+                                        <input type="text" class="form-control" id="block-comment" placeholder="Reason for blocking">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-danger" id="confirm-block-btn">Block Client</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/clients.js"></script>
+</body>
+</html>

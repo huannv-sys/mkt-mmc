@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik MSC Analysis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #0056b3;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+        }
+        header h1 {
+            color: white;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            flex: 1 1 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        .component-card {
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .requirements-list {
+            column-count: 2;
+            column-gap: 20px;
+        }
+        .full-width {
+            flex: 1 1 100%;
+        }
+        footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MikroTik Manager/Monitor System Analysis</h1>
+        <p>Analysis date: {{ repo_analysis.analysis_date }}</p>
+    </header>
+
+    <div class="card full-width">
+        <h2>System Overview</h2>
+        <p>This analysis provides an overview of the MikroTik Manager/Monitor System, focusing on its architecture, dependencies, and installation requirements based on the repository analysis.</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3>Installation Requirements</h3>
+            <h4>Compatible Operating Systems:</h4>
+            <ul>
+                {% for os in repo_analysis.installation.compatible_os %}
+                    <li>{{ os }}</li>
+                {% endfor %}
+            </ul>
+            
+            <h4>Required Services:</h4>
+            <ul>
+                {% for service in repo_analysis.installation.services %}
+                    <li>{{ service }}</li>
+                {% endfor %}
+            </ul>
+            
+            <h4>Database:</h4>
+            <p>{{ repo_analysis.installation.database }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Python Dependencies</h3>
+            <div class="requirements-list">
+                <ul>
+                    {% for req in repo_analysis.installation.requirements %}
+                        <li>{{ req }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card full-width">
+        <h3>Key Components</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>File/Directory</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for component in repo_analysis.components %}
+                    <tr>
+                        <td>{{ component.name }}</td>
+                        <td>{{ component.file if component.file else component.directory }}</td>
+                        <td>{{ component.description }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card full-width">
+        <h3>Installation Process</h3>
+        <p>The MikroTik Manager/Monitor System includes an installation script (<code>install.sh</code>) that performs the following operations:</p>
+        <ol>
+            <li>Installs system dependencies (Python, PostgreSQL, Node.js, etc.)</li>
+            <li>Sets up the PostgreSQL database and creates necessary users</li>
+            <li>Installs the backend Python components and dependencies</li>
+            <li>Installs and builds the frontend components</li>
+            <li>Creates systemd services for automatic startup</li>
+            <li>Configures Nginx as a reverse proxy</li>
+        </ol>
+        <p>The installation requires sudo privileges and is designed for Ubuntu systems.</p>
+    </div>
+
+    <footer>
+        <p>Analysis generated on {{ repo_analysis.analysis_date }} | MikroTik Manager/Monitor System Repository</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,255 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Quản lý Backup{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-save fa-fw me-2"></i> Quản lý Backup/Restore
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createBackupModal">
+                            <i class="fas fa-plus"></i> Tạo mới
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#uploadBackupModal">
+                            <i class="fas fa-upload"></i> Tải lên
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBackupList">
+                            <i class="fas fa-sync-alt"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info small mb-4">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Lưu ý:</strong> Có hai loại backup:
+                        <ul class="mb-0">
+                            <li><strong>Backup (.backup):</strong> Sao lưu hoàn chỉnh, bao gồm tất cả cấu hình và thiết lập. Khi khôi phục, thiết bị sẽ khởi động lại.</li>
+                            <li><strong>Export (.rsc):</strong> Tập lệnh cấu hình dạng văn bản, có thể chỉnh sửa. Không bao gồm mật khẩu và thông tin nhạy cảm theo mặc định.</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="backupListContainer">
+                        <div class="d-flex justify-content-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Backup Modal -->
+<div class="modal fade" id="createBackupModal" tabindex="-1" aria-labelledby="createBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createBackupModalLabel">Tạo Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBackupForm">
+                    <div class="mb-3">
+                        <label for="deviceSelect" class="form-label">Thiết bị</label>
+                        <select class="form-select" id="deviceSelect" name="device_id">
+                            <option value="current">Thiết bị hiện tại</option>
+                            <!-- Các thiết bị khác sẽ được thêm vào thông qua JavaScript -->
+                        </select>
+                        <div class="form-text">
+                            Chọn thiết bị cần tạo backup
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backupType" class="form-label">Loại Backup</label>
+                        <select class="form-select" id="backupType" name="type">
+                            <option value="backup">Backup (.backup)</option>
+                            <option value="export">Export (.rsc)</option>
+                        </select>
+                        <div class="form-text">
+                            <span id="backupTypeInfo">Sao lưu hoàn chỉnh hệ thống. Khi khôi phục, thiết bị sẽ khởi động lại.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backupName" class="form-label">Tên file</label>
+                        <input type="text" class="form-control" id="backupName" name="name" 
+                               placeholder="mikrotik_backup_20250310">
+                        <div class="form-text">Nếu để trống, hệ thống sẽ tự động tạo tên.</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check" id="sensitiveInfoContainer">
+                        <input type="checkbox" class="form-check-input" id="includeSensitive" name="include_sensitive">
+                        <label class="form-check-label" for="includeSensitive">Bao gồm thông tin nhạy cảm</label>
+                        <div class="form-text">Bao gồm mật khẩu và các thông tin nhạy cảm khác trong file export.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Thời gian thực hiện</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="schedule_type" id="scheduleNow" value="now" checked>
+                            <label class="form-check-label" for="scheduleNow">
+                                Thực hiện ngay
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="schedule_type" id="scheduleTime" value="scheduled">
+                            <label class="form-check-label" for="scheduleTime">
+                                Đặt lịch
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="scheduleTimeContainer" class="mb-3 d-none">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="scheduleDate" class="form-label">Ngày</label>
+                                <input type="date" class="form-control" id="scheduleDate" name="schedule_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="scheduleTime" class="form-label">Giờ</label>
+                                <input type="time" class="form-control" id="scheduleTimeInput" name="schedule_time">
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scheduleRecurring" name="schedule_recurring">
+                                    <label class="form-check-label" for="scheduleRecurring">
+                                        Lặp lại
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 d-none" id="scheduleIntervalContainer">
+                                <label for="scheduleInterval" class="form-label">Chu kỳ</label>
+                                <select class="form-select" id="scheduleInterval" name="schedule_interval">
+                                    <option value="daily">Hàng ngày</option>
+                                    <option value="weekly">Hàng tuần</option>
+                                    <option value="monthly">Hàng tháng</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="createBackupBtn">
+                    <span class="spinner-border spinner-border-sm d-none" id="createBackupSpinner" role="status" aria-hidden="true"></span>
+                    <i class="fas fa-save" id="createBackupIcon"></i> Tạo Backup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Backup Modal -->
+<div class="modal fade" id="uploadBackupModal" tabindex="-1" aria-labelledby="uploadBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadBackupModalLabel">Tải lên Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadBackupForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="backupFile" class="form-label">Chọn file</label>
+                        <input class="form-control" type="file" id="backupFile" name="file" accept=".backup,.rsc">
+                        <div class="form-text">Hỗ trợ file .backup hoặc .rsc</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="uploadBackupBtn">
+                    <span class="spinner-border spinner-border-sm d-none" id="uploadBackupSpinner" role="status" aria-hidden="true"></span>
+                    <i class="fas fa-upload" id="uploadBackupIcon"></i> Tải lên
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Confirmation Modal -->
+<div class="modal fade" id="restoreConfirmModal" tabindex="-1" aria-labelledby="restoreConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="restoreConfirmModalLabel">Xác nhận Khôi phục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Cảnh báo!</strong> Việc khôi phục cấu hình có thể gây mất kết nối tạm thời đến thiết bị MikroTik.
+                </div>
+                <p>Bạn có chắc chắn muốn khôi phục cấu hình từ file <strong id="restoreFileName"></strong>?</p>
+                
+                <div id="restoreBackupInfo" class="alert alert-info d-none">
+                    Thiết bị sẽ khởi động lại sau khi khôi phục từ file backup. Quá trình này có thể mất vài phút.
+                </div>
+                
+                <div id="restoreExportInfo" class="alert alert-info d-none">
+                    Các lệnh cấu hình từ file export sẽ được thực thi. Điều này có thể gây ra thay đổi đáng kể cho thiết bị.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-warning" id="confirmRestoreBtn">
+                    <span class="spinner-border spinner-border-sm d-none" id="restoreSpinner" role="status" aria-hidden="true"></span>
+                    <i class="fas fa-sync-alt" id="restoreIcon"></i> Xác nhận Khôi phục
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Export Modal -->
+<div class="modal fade" id="viewExportModal" tabindex="-1" aria-labelledby="viewExportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewExportModalLabel">Xem Export File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <span class="badge bg-secondary">File: <span id="viewExportFileName"></span></span>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" id="copyExportContentBtn">
+                            <i class="fas fa-copy"></i> Sao chép
+                        </button>
+                    </div>
+                </div>
+                <pre><code id="exportContent" class="language-routeros"></code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/backup/manager.js') }}"></script>
+{% endblock %}
